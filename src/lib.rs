@@ -2,10 +2,15 @@ use core::borrow;
 use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::*;
 use web_sys::{console, Document, KeyboardEvent};
+// use rand::prelude::*;
+extern crate js_sys;
+
 
 #[wasm_bindgen]
 pub struct TypingGame {
     body: Document,
+    word_list: Vec<String>,
+    word_idx: usize,
     text: String,
     index: usize,
     score: u32,
@@ -20,6 +25,8 @@ impl TypingGame {
                 let window = web_sys::window().expect("no global `window` exists");
                 window.document().expect("no global `document` exists")
             },
+            word_list: shuffle(vec!["apple".to_string(), "banana".to_string(), "cherry".to_string(), "grape".to_string(), "grape2".to_string()]),
+            word_idx: 0,
             text: "".to_string(),
             index: 0,
             score: 0,
@@ -36,11 +43,33 @@ impl TypingGame {
         text_area.set_inner_html(&html);
     }
 
-    pub fn start(&mut self) {
-        self.text = "tekitou".to_string();
-        self.display_text();
-        TypingGame::register_key_event_listener(TypingGame::new_internal());
+    fn next_word(&mut self) {
+        self.word_idx = if self.word_idx + 1 < self.word_list.len() {
+            self.word_idx + 1
+        } else {
+            0
+        };
+        self.text = self.word_list[self.word_idx].clone();
+        self.index = 0;
     }
+
+    pub fn start(mut self) {
+        self.text = self.word_list[self.word_idx].clone();
+        self.display_text();
+        TypingGame::register_key_event_listener(TypingGame::new_internal(self));
+    }
+}
+
+pub fn shuffle(array: Vec<String>) -> Vec<String>{
+    let mut array = array.clone();
+    let len = array.len();
+    for i in 0..len {
+        // 配列の末尾からランダムなインデックスを選択
+        let j = (js_sys::Math::random() * (i as f64)).floor() as usize;
+        // 要素を交換
+        array.swap(i, j);
+    }
+    array
 }
 
 // Rustの借用に関する処理はJSにエクスポートできないので内部関数で作成
@@ -61,31 +90,23 @@ impl TypingGame {
     * Rc, RefCellともにクラス内でアクセスを制御しているので、&による複数参照とは微妙に動作が違う。
 */
 impl TypingGame {
-    fn new_internal() -> Rc<RefCell<TypingGame>> {
-        Rc::new(RefCell::new(TypingGame {
-            body: {
-                let window = web_sys::window().expect("no global `window` exists");
-                window.document().expect("no global `document` exists")
-            },
-            text: "tekitou".to_string(),
-            index: 0,
-            score: 0,
-        }))
+    fn new_internal(self) -> Rc<RefCell<TypingGame>> {
+        Rc::new(RefCell::new(self))
     }
     fn register_key_event_listener(game: Rc<RefCell<TypingGame>>) {
         // clone() を使って借用を増やす。元の借用はイベントリスナーで可変借用として使う。
         let clone = Rc::clone(&game);
 
         let closure = Closure::wrap(Box::new(move |event: KeyboardEvent| {
-            // web_sys::console::log_1(&format!("You pressed: {}", event.key()).into());
-            // web_sys::console::log_1(&format!("text: {}\nindex: {}", game.borrow().text, game.borrow().index).into());
+            web_sys::console::log_1(&format!("You pressed: {}", event.key()).into());
+            web_sys::console::log_1(&format!("text: {}\nindex: {}", game.borrow().text, game.borrow().index).into());
             if let Ok(mut game_ref) = game.try_borrow_mut() {
                 // 可変参照をして、値を操作
                 if game_ref.text.chars().nth(game_ref.index).unwrap() == event.key().chars().nth(0).unwrap() {
                     if game_ref.text.len() > game_ref.index + 1 {
                         game_ref.index += 1;
                     } else {
-                        game_ref.index = 0;
+                        game_ref.next_word();
                     }
                     game_ref.display_text();
                 }
