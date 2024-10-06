@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+    <title>タイピングゲーム</title>
+</head>
+<body>
+    <div id="text-area"></div>
+    <script type="module">
+        import init, {run} from './pkg/hello_wasm.js';
+
+        init().then(() => {
+            run();
+        });
+    </script>
+</body>
+</html>
