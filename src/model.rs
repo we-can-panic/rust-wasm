@@ -1,4 +1,10 @@
 extern crate js_sys;
+use serde::Deserialize;
+
+#[derive(Deserialize, Clone)]
+pub struct WordList {
+    pub words: Vec<String>,
+}
 
 #[derive(Clone)]
 pub struct TypingGame {
@@ -10,9 +16,9 @@ pub struct TypingGame {
 }
 
 impl TypingGame {
-    pub fn new() -> Self {
+    pub fn new(word_list: Vec<String>) -> Self {
         let mut result = TypingGame {
-            word_list: shuffle(vec!["apple".to_string(), "banana".to_string(), "cherry".to_string(), "grape".to_string(), "grape2".to_string()]),
+            word_list: shuffle(word_list),
             word_idx: 0,
             text: "".to_string(),
             index: 0,

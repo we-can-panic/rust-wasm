@@ -1,0 +1,24 @@
+{
+  "words": [
+      "borrow",
+      "trait",
+      "ownership",
+      "lifetime",
+      "enum",
+      "struct",
+      "async",
+      "await",
+      "closure",
+      "iterator",
+      "pattern",
+      "macro",
+      "crate",
+      "module",
+      "concurrency",
+      "mutable",
+      "compiler",
+      "thread",
+      "reference",
+      "cargo"
+  ]
+}
